@@ -1,0 +1,22 @@
+{
+    "limits": [
+      {
+        "name": "API_1",
+        "limit": 100,
+        "window": 60,
+        "unit": "seconds"
+      },
+      {
+        "name": "API_2",
+        "limit": 50,
+        "window": 600,
+        "unit": "seconds"
+      },
+      {
+        "name": "API_3",
+        "limit": 20,
+        "window": 1200,
+        "unit": "seconds"
+      }
+    ]
+  }
