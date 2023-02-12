@@ -15,7 +15,6 @@ import (
 )
 
 var REDIS_CONFIG_KEY string = "config"
-var redisClient *redis.Client
 
 type Response struct {
 	Message   string
@@ -30,11 +29,18 @@ const (
 
 func Init() {
 	//creating redis client
-	redisClient = redis.NewClient(&redis.Options{
+	redisClient := redis.NewClient(&redis.Options{
 		Addr:     "localhost:6379",
 		Password: "",
 		DB:       0, // Redis uses database 0, but you can choose a different database by specifying a different index. In the example you provided, the "DB" option is set to 0, indicating that database 0 will be used
 	})
+
+	defer func() {
+		err := redisClient.Close()
+		if err != nil {
+			fmt.Println("Error closing Redis client:", err)
+		}
+	}()
 
 	waitConfigLoad := make(chan bool)
 	go workers.LoadConfig(redisClient, REDIS_CONFIG_KEY, "./RateLimiter/config/config.json", waitConfigLoad)
@@ -43,10 +49,24 @@ func Init() {
 	log.Println("config loaded")
 
 }
-func SlidingWindowRateLimiter(redisClient *redis.Client, r *http.Request, limitType int, key string) bool {
+func SlidingWindowRateLimiter(r *http.Request, limitType int, key string) bool {
 	var identifier string
 	var intervalInSeconds int64
 	var maximumRequests int64
+
+	//creating redis client
+	redisClient := redis.NewClient(&redis.Options{
+		Addr:     "localhost:6379",
+		Password: "",
+		DB:       0, // Redis uses database 0, but you can choose a different database by specifying a different index. In the example you provided, the "DB" option is set to 0, indicating that database 0 will be used
+	})
+
+	defer func() {
+		err := redisClient.Close()
+		if err != nil {
+			fmt.Println("Error closing Redis client:", err)
+		}
+	}()
 
 	luaScriptToGetConfig := `
 	local config = redis.call("GET", KEYS[1])
@@ -186,7 +206,7 @@ func SlidingWindowRateLimiter(redisClient *redis.Client, r *http.Request, limitT
 
 func RateLimiter(h http.Handler, limitType int, identifier string) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if !SlidingWindowRateLimiter(redisClient, r, limitType, identifier) {
+		if !SlidingWindowRateLimiter(r, limitType, identifier) {
 			log.Println("limiting")
 			resp := Response{
 				Message:   "Too many requests",

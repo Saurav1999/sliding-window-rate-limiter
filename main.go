@@ -31,6 +31,7 @@ func main() {
 	ratelimiter.Init()
 	helloHandler := http.HandlerFunc(hello)
 	http.Handle("/hello", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		fmt.Println("SETUP handler")
 		ratelimiter.RateLimiter(helloHandler, ratelimiter.LimitByUser, r.Header.Get("X-User-ID")).ServeHTTP(w, r)
 	}))
 	http.ListenAndServe(":5000", nil)
