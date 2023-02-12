@@ -18,7 +18,9 @@ type LimitItems struct {
 }
 
 type Config struct {
-	Limit []LimitItems `json:"limits"`
+	LimitApis  []LimitItems `json:"limitsAPI"`
+	LimitUsers LimitItems   `json:"limitsUser"`
+	LimitIPs   LimitItems   `json:"limitByIp"`
 }
 
 func readAndWriteConfig(file *os.File, redisKey string, redisClient *redis.Client) {
@@ -26,7 +28,6 @@ func readAndWriteConfig(file *os.File, redisKey string, redisClient *redis.Clien
 	file.Seek(0, 0) // reset pointer to the beginning
 	config := &Config{}
 	err := decoder.Decode(&config)
-	log.Println("Decoded values", config)
 	if err != nil {
 		log.Println("Error decoding JSON:", err)
 		return
@@ -43,13 +44,13 @@ func writeToRedis(client *redis.Client, config *Config, redisKey string) {
 	}
 	err = client.Set(context.Background(), redisKey, configBytes, 0).Err()
 	if err != nil {
-		log.Println("Error writing to Redis:", err)
+		log.Fatal("Error writing to Redis:", err)
 		return
 	}
 	log.Println("Wrote to Redis:", redisKey, config)
 }
 
-func LoadConfig(redisClient *redis.Client, redisKey string, filepath string) {
+func LoadConfig(redisClient *redis.Client, redisKey string, filepath string, waitConfigLoad chan bool) {
 	log.Println("Loading Config...")
 	file, err := os.Open(filepath)
 	if err != nil {
@@ -63,6 +64,9 @@ func LoadConfig(redisClient *redis.Client, redisKey string, filepath string) {
 	if err != nil {
 		log.Fatal(err)
 	}
+
+	// Done with initial config load
+	waitConfigLoad <- true
 	modTime := info.ModTime()
 	for {
 		info, err = file.Stat()

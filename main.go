@@ -28,9 +28,11 @@ func hello(w http.ResponseWriter, req *http.Request) {
 }
 func main() {
 	// mux := http.NewServeMux()
+	ratelimiter.Init()
 	helloHandler := http.HandlerFunc(hello)
-	http.Handle("/hello", ratelimiter.RateLimiter(helloHandler))
-
+	http.Handle("/hello", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		ratelimiter.RateLimiter(helloHandler, ratelimiter.LimitByUser, r.Header.Get("X-User-ID")).ServeHTTP(w, r)
+	}))
 	http.ListenAndServe(":5000", nil)
 
 }

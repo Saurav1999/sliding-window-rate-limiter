@@ -1,5 +1,5 @@
 {
-    "limits": [
+    "limitsAPI": [
       {
         "name": "API_1",
         "limit": 100,
@@ -9,7 +9,7 @@
       {
         "name": "API_2",
         "limit": 50,
-        "window": 600,
+        "window": 800,
         "unit": "seconds"
       },
       {
@@ -18,5 +18,16 @@
         "window": 1200,
         "unit": "seconds"
       }
-    ]
+    ],
+    "limitsUser": {
+      "limit": 4,
+      "window":60,
+      "unit": "seconds"
+    },
+
+    "limitByIp": {
+      "limit": 20,
+      "window": 1200,
+      "unit": "seconds"
+    }
   }
