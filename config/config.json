@@ -1,21 +1,15 @@
 {
     "limitsAPI": [
       {
-        "name": "API_1",
-        "limit": 100,
+        "name": "http://localhost:5000/hello-api",
+        "limit": 8,
         "window": 60,
         "unit": "seconds"
       },
       {
-        "name": "API_2",
+        "name": "http://localhost:5000/hello",
         "limit": 50,
         "window": 800,
-        "unit": "seconds"
-      },
-      {
-        "name": "API_3",
-        "limit": 20,
-        "window": 1200,
         "unit": "seconds"
       }
     ],

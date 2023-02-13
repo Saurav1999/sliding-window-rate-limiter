@@ -39,7 +39,7 @@ func writeToRedis(client *redis.Client, config *Config, redisKey string) {
 	log.Println("key value", redisKey, config)
 	configBytes, err := json.Marshal(config)
 	if err != nil {
-		log.Println("Error Marshaling config data:", err)
+		log.Fatal("Error Marshaling config data:", err)
 		return
 	}
 	err = client.Set(context.Background(), redisKey, configBytes, 0).Err()
@@ -71,11 +71,11 @@ func LoadConfig(redisClient *redis.Client, redisKey string, filepath string, wai
 	for {
 		info, err = file.Stat()
 		if err != nil {
-			log.Fatal(err)
+			log.Println("Config update failed", err)
 		}
 
 		if modTime != info.ModTime() {
-			log.Println("modified file:", file.Name())
+			log.Println("Modified file:", file.Name())
 			modTime = info.ModTime()
 			// update the cache in Redis with the updated configuration from config file
 			readAndWriteConfig(file, redisKey, redisClient)

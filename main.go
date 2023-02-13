@@ -27,13 +27,15 @@ func hello(w http.ResponseWriter, req *http.Request) {
 	w.Write([]byte(payload))
 }
 func main() {
-	// mux := http.NewServeMux()
-	ratelimiter.Init()
+	ratelimiter.Init("./config/config.json", true)
 	helloHandler := http.HandlerFunc(hello)
-	http.Handle("/hello", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		fmt.Println("SETUP handler")
+	helloHandlerWrapper := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ratelimiter.RateLimiter(helloHandler, ratelimiter.LimitByUser, r.Header.Get("X-User-ID")).ServeHTTP(w, r)
-	}))
+	})
+	http.Handle("/hello", helloHandlerWrapper)
+	http.Handle("/hello-api", ratelimiter.RateLimiter(helloHandler, ratelimiter.LimitByApi, ""))
+	http.Handle("/hello-ip", ratelimiter.RateLimiter(helloHandler, ratelimiter.LimitByIp, ""))
+
 	http.ListenAndServe(":5000", nil)
 
 }

@@ -8,6 +8,7 @@ import (
 	"net"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 
 	"gihub.com/Saurav1999/sliding-window-rate-limiter/RateLimiter/workers"
@@ -15,6 +16,8 @@ import (
 )
 
 var REDIS_CONFIG_KEY string = "config"
+var redisClient *redis.Client
+var limitOnFailure bool
 
 type Response struct {
 	Message   string
@@ -27,46 +30,27 @@ const (
 	LimitByUser
 )
 
-func Init() {
+func Init(configPath string, limitByDefaultOnFailure bool) {
+
 	//creating redis client
-	redisClient := redis.NewClient(&redis.Options{
+	redisClient = redis.NewClient(&redis.Options{
 		Addr:     "localhost:6379",
 		Password: "",
 		DB:       0, // Redis uses database 0, but you can choose a different database by specifying a different index. In the example you provided, the "DB" option is set to 0, indicating that database 0 will be used
 	})
 
-	defer func() {
-		err := redisClient.Close()
-		if err != nil {
-			fmt.Println("Error closing Redis client:", err)
-		}
-	}()
-
+	limitOnFailure = limitByDefaultOnFailure
 	waitConfigLoad := make(chan bool)
-	go workers.LoadConfig(redisClient, REDIS_CONFIG_KEY, "./RateLimiter/config/config.json", waitConfigLoad)
+	go workers.LoadConfig(redisClient, REDIS_CONFIG_KEY, configPath, waitConfigLoad)
 	log.Println("Waiting for initial config load")
 	<-waitConfigLoad
-	log.Println("config loaded")
+	log.Println("Config loaded")
 
 }
 func SlidingWindowRateLimiter(r *http.Request, limitType int, key string) bool {
 	var identifier string
 	var intervalInSeconds int64
 	var maximumRequests int64
-
-	//creating redis client
-	redisClient := redis.NewClient(&redis.Options{
-		Addr:     "localhost:6379",
-		Password: "",
-		DB:       0, // Redis uses database 0, but you can choose a different database by specifying a different index. In the example you provided, the "DB" option is set to 0, indicating that database 0 will be used
-	})
-
-	defer func() {
-		err := redisClient.Close()
-		if err != nil {
-			fmt.Println("Error closing Redis client:", err)
-		}
-	}()
 
 	luaScriptToGetConfig := `
 	local config = redis.call("GET", KEYS[1])
@@ -76,13 +60,13 @@ func SlidingWindowRateLimiter(r *http.Request, limitType int, key string) bool {
 
 	if err != nil {
 		log.Println("Error loading config from Redis:", err)
-		return false
+		return limitOnFailure
 	}
 
 	configJSONString, ok := configJSON.(string)
 	if !ok {
 		log.Println("Error: config is not a string")
-		return false
+		return limitOnFailure
 	}
 
 	var config workers.Config
@@ -90,12 +74,12 @@ func SlidingWindowRateLimiter(r *http.Request, limitType int, key string) bool {
 
 	if err != nil {
 		log.Println("Error parsing config JSON:", err)
-		return false
+		return limitOnFailure
 	}
 
 	switch limitType {
 	case LimitByApi:
-		if key != "" {
+		if key == "" {
 			host := r.Host
 			endpoint := r.URL.Path
 			URL := host + endpoint
@@ -106,26 +90,26 @@ func SlidingWindowRateLimiter(r *http.Request, limitType int, key string) bool {
 
 		index := -1
 		for i, v := range config.LimitApis {
-			if v.Name == identifier {
+			if strings.Contains(v.Name, identifier) {
 				index = i
 				break
 			}
 		}
 
 		if index == -1 {
-			log.Println("Config for the identifier to limit the respective api is not found in the config:")
-			return false
+			log.Println("Config for the identifier to limit the respective api is not found in the config")
+			return limitOnFailure
 		}
 
 		intervalInSeconds = int64(config.LimitApis[index].Window)
 		maximumRequests = int64(config.LimitApis[index].Limit)
 
 	case LimitByIp:
-		if key != "" {
+		if key == "" {
 			ip, _, err := net.SplitHostPort(r.RemoteAddr)
 			if err != nil {
 				// Handle the error
-				return false
+				return limitOnFailure
 			}
 
 			identifier = ip
@@ -141,7 +125,7 @@ func SlidingWindowRateLimiter(r *http.Request, limitType int, key string) bool {
 		maximumRequests = int64(config.LimitUsers.Limit)
 	default:
 		log.Println("No limit specified")
-		return false
+		return limitOnFailure
 	}
 
 	now := time.Now().Unix()
@@ -165,20 +149,20 @@ func SlidingWindowRateLimiter(r *http.Request, limitType int, key string) bool {
 
 	if err != nil {
 		log.Println("Error in executing lua script:", err)
-		return false
+		return limitOnFailure
 	}
 
 	returnArray, ok := result.([]interface{})
 	if !ok {
 		log.Println("Failed to cast lua result to []interface{}")
-		return false
+		return limitOnFailure
 	}
 	prevCount, currCount := returnArray[0].(int64), returnArray[1].(int64)
 	log.Println("Lua script executed", prevCount, currCount)
 	requestCountCurrentWindow := currCount
 	if requestCountCurrentWindow >= maximumRequests {
 		// drop request
-		return false
+		return true
 	}
 
 	requestCountLastWindow := prevCount
@@ -187,7 +171,7 @@ func SlidingWindowRateLimiter(r *http.Request, limitType int, key string) bool {
 	// last window weighted count + current window count
 	if (float64(requestCountLastWindow)*(1-elapsedTimePercentage))+float64(requestCountCurrentWindow) >= float64(maximumRequests) {
 		// drop request
-		return false
+		return true
 	}
 
 	//run script to add this element to currentwindow count
@@ -198,15 +182,15 @@ func SlidingWindowRateLimiter(r *http.Request, limitType int, key string) bool {
 	_, err = redisClient.Eval(context.Background(), script, []string{identifier}, currentWindow, now).Result()
 	if err != nil {
 		fmt.Println(err)
-		return false
+		return limitOnFailure
 	}
 
-	return true
+	return false
 }
 
 func RateLimiter(h http.Handler, limitType int, identifier string) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if !SlidingWindowRateLimiter(r, limitType, identifier) {
+		if SlidingWindowRateLimiter(r, limitType, identifier) {
 			log.Println("limiting")
 			resp := Response{
 				Message:   "Too many requests",
