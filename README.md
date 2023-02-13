@@ -8,7 +8,7 @@ Possible ways of Rate Limiting
 3. Limit by Custom user identifier like X-User-Id, Authorization token, etc.
 
 
-How to use?
+## How to use?
 
 Step 1: Create a config.json containing the configs to rate limit based on the type of rate limit in use.
 
@@ -19,6 +19,7 @@ the keys for the config to be used are as follows:
 
 Each of the key is optional. Use only config for those type that are in use. Need not add for the rest.
 The content of config should look something like as demonstrated below. 
+```sh
 {
     
     "limitsAPI": [ 
@@ -47,7 +48,7 @@ The content of config should look something like as demonstrated below.
       "unit": "seconds"
     }
   }
-
+```
 
 
 
@@ -65,13 +66,13 @@ Identifier can have any unique string value as it gets used as key in redis but 
     1. LimitByIp - RemoteAddr from request is used as identifier by default
     2. LimitByApi - Url(r.Host + r.URL.Path) is used as identifier and it must be present as a substring in the identifier in limitsAPI block of the config.
     
-    In case the identifier is not passed as empty string("") then that identifier should be present in config file in the identifier field in case of LimitByApi.
+In case the identifier is not passed as empty string("") then that identifier should be present in config file in the identifier field in case of LimitByApi.
 
 
-    LimitByUser type requires special wrapping of a HandleFunc type to allow to calculate and pass custom unique field (Like X-User-Id, Authorization token, etc) from the request as shown in example below.
+LimitByUser type requires special wrapping of a HandleFunc type to allow to calculate and pass custom unique field (Like X-User-Id, Authorization token, etc) from the request as shown in example below.
  
-Usage example:
-
+## Usage example:
+```sh
 //Sample handler that simply returns success response in case the request gets processed and not get dropped by rate limiter.
 func hello(w http.ResponseWriter, req *http.Request) {
 	w.WriteHeader(http.StatusAccepted)
@@ -104,5 +105,5 @@ func main() {
 	http.ListenAndServe(":5000", nil)
 
 }
-
+```
 
