@@ -5,7 +5,7 @@ Sliding window rate limiter implemented in Golang/ Go  using redis
 Possible ways of Rate Limiting
 1. Limit by API endpoint
 2. Limit by IP
-3. Limit by Customer user identifier like X-User-Id, Authorization token, etc.
+3. Limit by Custom user identifier like X-User-Id, Authorization token, etc.
 
 
 How to use?
@@ -88,10 +88,7 @@ func hello(w http.ResponseWriter, req *http.Request) {
 }
 
 
-
-
 func main() {
-
 	ratelimiter.Init("./config/config.json", true) // Pass config path and limitByDefaultOnFailure bool
 	helloHandler := http.HandlerFunc(hello)
 	helloHandlerWrapper := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) { //Wrapper layer to allow passing of custom identifier from request
