@@ -58,9 +58,9 @@ Step 2: Invoke Init method with config path and a bool config limitByDefaultOnFa
   
 Step 3: Wrap request handler with RateLimiter function and specify LimitType and identifier.
     LimitType can have following values:
-      1. LimitByUser
-      2. LimitByApi
-      3. LimitByIp
+    1. LimitByUser
+    2. LimitByApi
+    3. LimitByIp
       
 Identifier can have any unique string value as it gets used as key in redis but in case of LimitByIp and LimitByApi it is recommended to keep it as empty string("") due to following reasons.
     1. LimitByIp - RemoteAddr from request is used as identifier by default
