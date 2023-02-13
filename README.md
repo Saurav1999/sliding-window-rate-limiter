@@ -61,7 +61,7 @@ Step 3: Wrap request handler with RateLimiter function and specify LimitType and
       2. LimitByApi
       3. LimitByIp
       
-    Identifier can have any unique string value as it gets used as key in redis but in case of LimitByIp and LimitByApi it is recommended to keep it as empty string("") due to following reasons.
+Identifier can have any unique string value as it gets used as key in redis but in case of LimitByIp and LimitByApi it is recommended to keep it as empty string("") due to following reasons.
     1. LimitByIp - RemoteAddr from request is used as identifier by default
     2. LimitByApi - Url(r.Host + r.URL.Path) is used as identifier and it must be present as a substring in the identifier in limitsAPI block of the config.
     
@@ -92,8 +92,7 @@ func hello(w http.ResponseWriter, req *http.Request) {
 
 func main() {
 
-  // 
-	ratelimiter.Init("./config/config.json", true)
+	ratelimiter.Init("./config/config.json", true) // Pass config path and limitByDefaultOnFailure bool
 	helloHandler := http.HandlerFunc(hello)
 	helloHandlerWrapper := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) { //Wrapper layer to allow passing of custom identifier from request
   
