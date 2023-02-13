@@ -1,13 +1,13 @@
 {
     "limitsAPI": [
       {
-        "name": "http://localhost:5000/hello-api",
+        "identifier": "http://localhost:5000/hello-api",
         "limit": 8,
         "window": 60,
         "unit": "seconds"
       },
       {
-        "name": "http://localhost:5000/hello",
+        "identifier": "http://localhost:5000/hello",
         "limit": 50,
         "window": 800,
         "unit": "seconds"
@@ -19,7 +19,7 @@
       "unit": "seconds"
     },
 
-    "limitByIp": {
+    "limitsIp": {
       "limit": 20,
       "window": 1200,
       "unit": "seconds"

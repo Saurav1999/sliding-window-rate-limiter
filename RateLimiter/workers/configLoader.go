@@ -11,16 +11,16 @@ import (
 )
 
 type LimitItems struct {
-	Name   string `json:"name"`
-	Limit  int    `json:"limit"`
-	Window int    `json:"window"`
-	Unit   string `json:"unit"`
+	Identifier string `json:"identifier"`
+	Limit      int    `json:"limit"`
+	Window     int    `json:"window"`
+	Unit       string `json:"unit"`
 }
 
 type Config struct {
 	LimitApis  []LimitItems `json:"limitsAPI"`
 	LimitUsers LimitItems   `json:"limitsUser"`
-	LimitIPs   LimitItems   `json:"limitByIp"`
+	LimitIPs   LimitItems   `json:"limitsIp"`
 }
 
 func readAndWriteConfig(file *os.File, redisKey string, redisClient *redis.Client) {

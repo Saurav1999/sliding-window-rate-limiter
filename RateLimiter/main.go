@@ -90,7 +90,7 @@ func SlidingWindowRateLimiter(r *http.Request, limitType int, key string) bool {
 
 		index := -1
 		for i, v := range config.LimitApis {
-			if strings.Contains(v.Name, identifier) {
+			if strings.Contains(v.Identifier, identifier) {
 				index = i
 				break
 			}
