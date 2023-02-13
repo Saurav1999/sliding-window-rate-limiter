@@ -57,14 +57,16 @@ Step 2: Invoke Init method with config path and a bool config limitByDefaultOnFa
   limitByDefaultOnFailure: false // Allow the request in case of any failures by default.
   
 Step 3: Wrap request handler with RateLimiter function and specify LimitType and identifier.
-    LimitType can have following values:
-    1. LimitByUser
-    2. LimitByApi
-    3. LimitByIp
+
+LimitType can have following values:
+1. LimitByUser
+2. LimitByApi
+3. LimitByIp
       
 Identifier can have any unique string value as it gets used as key in redis but in case of LimitByIp and LimitByApi it is recommended to keep it as empty string("") due to following reasons.
-    1. LimitByIp - RemoteAddr from request is used as identifier by default
-    2. LimitByApi - Url(r.Host + r.URL.Path) is used as identifier and it must be present as a substring in the identifier in limitsAPI block of the config.
+
+1. LimitByIp - RemoteAddr from request is used as identifier by default
+2. LimitByApi - Url(r.Host + r.URL.Path) is used as identifier and it must be present as a substring in the identifier in limitsAPI block of the config.
     
 In case the identifier is not passed as empty string("") then that identifier should be present in config file in the identifier field in case of LimitByApi.
 
