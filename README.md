@@ -108,4 +108,4 @@ func main() {
 
 }
 ```
-### To Learn more about how exactly to create config file and use this library switch to example branch in this Repository.
+### To Learn more about how exactly to create the config file and use this library, switch to example branch in this Repository.
