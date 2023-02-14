@@ -11,7 +11,7 @@ import (
 	"strings"
 	"time"
 
-	"gihub.com/Saurav1999/sliding-window-rate-limiter/workers"
+	"github.com/Saurav1999/sliding-window-rate-limiter/workers"
 	"github.com/go-redis/redis/v8"
 )
 
