@@ -109,3 +109,4 @@ func main() {
 }
 ```
 ### To Learn more about how exactly to create the config file and use this library, switch to example branch in this Repository.
+#### Feel free to create pull requests and add suggestions.
